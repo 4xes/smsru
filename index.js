@@ -1,124 +1,206 @@
-﻿//'use strict';
+﻿'use strict';
 
 
 var http = require('http');
 var qs = require("querystring");
 var crypto = require('crypto');
 
-//nightmare
-params = {};
 
-function SMS(api_id, login, passwd) {
-        
-    if(login && passwd){
-        this.login = login;
-        this.passwd = passwd;
-        
+function formatParams(params) {
+    var result = [];
 
-        this.getToken(function(err,array){
 
-            var token = array[0];
-            var api_id = !api_id?'':api_id;
-            var sha512  = crypto.createHash('sha512').update(passwd + token + api_id).digest("hex");   
-            
-            params = ({login: login, sha512: sha512, token: token});
-           
+    Object.keys(params).forEach(function (key) {
+        result.push(key + '=' + params[key]);
+    });
 
-        });
+    return result.join('&');
+}
 
-    }else{
-        params = {api_id: api_id};
+var merge = function () {
+    var obj = {},
+        i = 0,
+        il = arguments.length,
+        key;
+    for (; i < il; i++) {
+        for (key in arguments[i]) {
+            if (arguments[i].hasOwnProperty(key)) {
+                obj[key] = arguments[i][key];
+            }
+        }
     }
-    
-}
+    return obj;
+};
 
-//SMS.prototype.sendArray = function(phone, text, callback, from, time ,translit){
-//    for(var i = 0, l = phone.length; i < l; i++){
-//        this.send(phone[i], text, callback, from, time ,translit);
-//    }
-//}
-
-SMS.prototype.saveParams = function(params){
-    this.params = params;
-}
-
-SMS.HOST = 'sms.ru';
-SMS.SEND = '/sms/send?';
-SMS.STATUS = '/sms/status?';
-SMS.COST = '/sms/cost?';
-SMS.BALANCE = '/my/balance?';
-SMS.LIMIT = '/my/limit?';
-SMS.SENDERS = '/my/senders?';
-SMS.GET_TOKEN = '/auth/get_token';
-SMS.CHECK = '/auth/check?';
-SMS.ADD ='/stoplist/add?';
-SMS.DEL ='/stoplist/del?';
-SMS.GET ='/stoplist/get?';
-SMS.UCS = '/sms/ucs?';
-
-var env = process.env.NODE_ENV || 'development';
-
-SMS.prototype.curl = function(options, callback){
-    http.get(options, function(res){
+SmsRu.prototype.curl = function (method, params, callback) {
+    var url = 'http://sms.ru' + method + '?' + formatParams(merge(this.auth, params));
+    console.log(url);
+    http.get(url, function(res){
         res.setEncoding('utf8');
+        var body = '';
         res.on('data', function (chunk) {
-            if(callback)
-                callback(null, chunk.split('\n'));
+            body += chunk;
         });
+        res.on('end', function () {
+            callback(null, body);
+        });
+        res.on('error', function (err) {
+            callback(err);
+        });
+    })
+}
 
-    }).on('error', function(err){
-        if(callback)
-        callback(err);
+
+SmsRu.prototype.cost = function (params, callback) {
+
+    this.curl("/sms/cost", params, function (err, body) {
+        var data = body.split('\n');
+        console.log(data);
+        if (err) {
+            callback(err);
+        } else if (!("100" === data[0])) {
+            callback(new Error(data[0]));
+        } else {
+            callback(null, data[1], data[0]);
+
+        }
     });
 }
 
-SMS.prototype.dev = false;
+SmsRu.prototype.balance = function (callback) {
 
-SMS.prototype.send = function(phone, text, callback, from, time ,translit){
-    var query = {to:phone, text: text};
-    if(from) query.from = from;
-    if(time) query.time = ((new Date().getTime() + isNumeric(time)?time:0) / 1000).toFixed();
-    if(translit == 1 || translit == true) query.translit = 1;
-    if(this.dev) query.test = 1;
+    this.curl("/my/balance", {}, function (err, body) {
+        var data = body.split('\n');
+        console.log(data);
+        if (err) {
+            callback(err);
+        } else if (!("100" === data[0])) {
+            callback(new Error(data[0]));
+        } else {
+            callback(null, data[1], data[0]);
 
-    var options = {
-        hostname: SMS.HOST,
-        port: 80,
-        path: SMS.SEND + qs.stringify(params) +'&' + qs.stringify(query)
+        }
+    });
+}
+
+
+SmsRu.prototype.check = function (callback) {
+    this.curl("/auth/check", {}, function (err, result) {
+
+        console.log(result);
+        if (err) {
+            callback(err);
+        } else if (!(result === '100')) {
+            callback(new Error(result));
+        } else {
+            callback(null, true);
+        }
+    });
+};
+
+///my/limit?
+
+SmsRu.prototype.limit = function (callback) {
+
+    this.curl("/my/limit", {}, function (err, body) {
+        var data = body.split('\n');
+
+        console.log(data);
+        if (err) {
+            callback(err);
+        } else if (!("100" === data[0])) {
+            callback(new Error(data[0]));
+        } else {
+            callback(null, data[0], data[1], data[2]);
+
+        }
+    });
+}
+
+SmsRu.prototype.senders = function (callback) {
+
+    this.curl("/my/senders", {}, function (err, body) {
+        var data = body.split('\n');
+        console.log(data);
+        if (err) {
+            callback(err);
+        } else if (!("100" === data[0])) {
+            callback(new Error(data[0]));
+        } else {
+            callback(null, data.slice(1), data[0]);
+
+        }
+    });
+}
+
+SmsRu.prototype.send = function (params, callback) {
+    
+    if (params.time) params.time = ((new Date().getTime() + isNaN(params.time) ? params.time : 0) / 1000).toFixed();
+    
+    this.curl("/sms/send", params, function (err, body) {
+        var data = body.split('\n');
+        console.log(data);
+        if (err) {
+            callback(err);
+        } else if (!("100" === data[0])) {
+            callback(new Error(data[0]));
+        } else {
+            callback(null, data[1], data[0]);
+            
+        }
+    });
+}
+
+SmsRu.prototype.status = function (id, callback) {
+    this.curl("/sms/status", {
+        id: id
+    }, function (err, result) {
+        
+        console.log(result);
+        if (err) {
+            callback(err);
+        } else if (result < '100' || result > '103') {
+            callback(new Error(result));
+        } else {
+            callback(null, result);
+        }
+    });
+};
+
+function SmsRu(opt) {
+    var self = this;
+    this.api_id = opt.api_id;
+ 
+    if (opt.login && opt.password) {
+        this.login = opt.login;
+        this.password = opt.password;
+        
+        this.token(function (err, token) {
+            if (!err) {
+                self.auth = { login: self.login, token: token, sha512: crypto.createHash('sha512').update(self.password + token + (!self.api_id ? '' : self.api_id)).digest("hex") };
+                console.log(self.auth);
+            }
+            
+        });
+    }
+    else if (opt.api_id) {
+        this.auth = { api_id: opt.api_id };
     }
     
-    console.log(options.path);
-    this.curl(options, callback);
-};
-
-SMS.prototype.send
-
-SMS.prototype.getToken = function(callback) {
-    var options = {
-        hostname: SMS.HOST,
-        port: 80,
-        path: SMS.GET_TOKEN
-    }
-    this.curl(options, callback);
-};
-
-
-
-
-SMS.prototype.status = function(sms_id, callback){
-    var query = {id:sms_id};
-    var options = {
-        hostname: SMS.HOST,
-        port: 80,
-        path: SMS.STATUS + qs.stringify(params) + '&'+  qs.stringify(query)
-    }
-    console.log(options.path);
-    this.curl(options, callback);
 }
 
-SMS.prototype.balance = function(){
-}
-SMS.prototype.limit = function(){};
 
 
-module.exports = SMS;
+SmsRu.prototype.token = function(callback){
+    this.curl('/auth/get_token', {}
+    , function(err, token){
+        if(err){
+            callback(err);
+        } else {
+            callback(null, token);
+        }
+    });
+};
+
+
+module.exports = SmsRu;
