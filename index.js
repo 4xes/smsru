@@ -34,7 +34,7 @@ var merge = function () {
 
 SmsRu.prototype.curl = function (method, params, callback) {
     var url = 'http://sms.ru' + method + '?' + formatParams(merge(this.auth, params));
-    console.log(url);
+    console.log('URL : ' + url);
     http.get(url, function(res){
         res.setEncoding('utf8');
         var body = '';
@@ -87,7 +87,6 @@ SmsRu.prototype.balance = function (callback) {
 SmsRu.prototype.check = function (callback) {
     this.curl("/auth/check", {}, function (err, result) {
 
-        console.log(result);
         if (err) {
             callback(err);
         } else if (!(result === '100')) {
@@ -139,7 +138,6 @@ SmsRu.prototype.send = function (params, callback) {
     
     this.curl("/sms/send", params, function (err, body) {
         var data = body.split('\n');
-        console.log(data);
         if (err) {
             callback(err);
         } else if (!("100" === data[0])) {
@@ -167,6 +165,8 @@ SmsRu.prototype.status = function (id, callback) {
     });
 };
 
+//http://sms.ru/stoplist/add?api_id=3e44bb61-7790-5b64-6d80-c43f14b2f80d&stoplist_phone=79251112233&stoplist_text=ban
+
 function SmsRu(opt) {
     var self = this;
     this.api_id = opt.api_id;
@@ -175,6 +175,7 @@ function SmsRu(opt) {
         this.login = opt.login;
         this.password = opt.password;
         
+        
         this.token(function (err, token) {
             if (!err) {
                 self.auth = { login: self.login, token: token, sha512: crypto.createHash('sha512').update(self.password + token + (!self.api_id ? '' : self.api_id)).digest("hex") };
@@ -182,6 +183,21 @@ function SmsRu(opt) {
             }
             
         });
+        //we need to get token every 10 minutes
+        if (opt.autoToken) {
+            setInterval(function () {
+                this.token(function (err, token) {
+                    if (!err) {
+                        self.auth = { login: self.login, token: token, sha512: crypto.createHash('sha512').update(self.password + token + (!self.api_id ? '' : self.api_id)).digest("hex") };
+                        console.log(self.auth);
+                    }
+
+                });
+            
+
+
+            }, 10 * 60 * 1000);
+        }
     }
     else if (opt.api_id) {
         this.auth = { api_id: opt.api_id };
