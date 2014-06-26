@@ -2,7 +2,6 @@
 
 
 var http = require('http');
-var qs = require("querystring");
 var crypto = require('crypto');
 
 
@@ -34,7 +33,7 @@ var merge = function () {
 
 SmsRu.prototype.curl = function (method, params, callback) {
     var url = 'http://sms.ru' + method + '?' + formatParams(merge(this.auth, params));
-    console.log('URL : ' + url);
+    console.log('URL : ' + method + '?' + formatParams(params));
     http.get(url, function(res){
         res.setEncoding('utf8');
         var body = '';
@@ -55,7 +54,6 @@ SmsRu.prototype.cost = function (params, callback) {
 
     this.curl("/sms/cost", params, function (err, body) {
         var data = body.split('\n');
-        console.log(data);
         if (err) {
             callback(err);
         } else if (!("100" === data[0])) {
@@ -71,7 +69,6 @@ SmsRu.prototype.balance = function (callback) {
 
     this.curl("/my/balance", {}, function (err, body) {
         var data = body.split('\n');
-        console.log(data);
         if (err) {
             callback(err);
         } else if (!("100" === data[0])) {
@@ -103,8 +100,6 @@ SmsRu.prototype.limit = function (callback) {
 
     this.curl("/my/limit", {}, function (err, body) {
         var data = body.split('\n');
-
-        console.log(data);
         if (err) {
             callback(err);
         } else if (!("100" === data[0])) {
@@ -120,7 +115,6 @@ SmsRu.prototype.senders = function (callback) {
 
     this.curl("/my/senders", {}, function (err, body) {
         var data = body.split('\n');
-        console.log(data);
         if (err) {
             callback(err);
         } else if (!("100" === data[0])) {
@@ -153,8 +147,7 @@ SmsRu.prototype.status = function (id, callback) {
     this.curl("/sms/status", {
         id: id
     }, function (err, result) {
-        
-        console.log(result);
+
         if (err) {
             callback(err);
         } else if (result < '100' || result > '103') {
@@ -165,24 +158,6 @@ SmsRu.prototype.status = function (id, callback) {
     });
 };
 
-//http://sms.ru/stoplist/add?api_id=3e44bb61-7790-5b64-6d80-c43f14b2f80d&stoplist_phone=79251112233&stoplist_text=ban
-
-SmsRu.prototype.status = function (params, callback) {
-    this.curl("/stoplist/add", {
-        stoplist_phone: params.stoplist_phone,
-        stoplist_text: params.stoplist_text
-    }, function (err, result) {
-
-        console.log(result);
-        if (err) {
-            callback(err);
-        } else if (!("100" === data[0])) {
-            callback(new Error(result));
-        } else {
-            callback(null, result);
-        }
-    });
-};
 
 SmsRu.prototype.stoplistAdd = function (params, callback) {
     this.curl("/stoplist/add", {
@@ -190,7 +165,6 @@ SmsRu.prototype.stoplistAdd = function (params, callback) {
         stoplist_text: params.stoplist_text
     }, function (err, result) {
 
-        console.log(result);
         if (err) {
             callback(err);
         } else if (!("100" === result)) {
@@ -200,9 +174,6 @@ SmsRu.prototype.stoplistAdd = function (params, callback) {
         }
     });
 };
-
-//http://sms.ru/stoplist/get?api_id=3e44bb61-7790-5b64-6d80-c43f14b2f80d
-
 
 
 SmsRu.prototype.stoplistDel = function (params, callback) {
@@ -217,7 +188,6 @@ SmsRu.prototype.stoplistDel = function (params, callback) {
         stoplist_phone: obj.stoplist_phone
     }, function (err, result) {
 
-        console.log(result);
         if (err) {
             callback(err);
         } else if (!("100" === result)) {
@@ -228,18 +198,26 @@ SmsRu.prototype.stoplistDel = function (params, callback) {
     });
 };
 
+var formatStopList = function (data, callback) {
+    var obj = [];
+    data.slice(1).forEach(function (elem, index) {
+        var sp = elem.split(';');
+        obj.push({ stoplist_phone: sp[0], stoplist_text: sp[1] });
+
+    })
+    callback(null, obj, data[0]);
+}
+
 SmsRu.prototype.stoplist = function (callback) {
 
     this.curl("/stoplist/get", {}, function (err, body) {
         var data = body.split('\n');
-        console.log(data);
         if (err) {
             callback(err);
         } else if (!("100" === data[0])) {
             callback(new Error(data[0]));
         } else {
-            callback(null, data.slice(1), data[0]);
-
+            formatStopList(data, callback);
         }
     });
 }
@@ -266,7 +244,6 @@ function SmsRu(opt) {
                 self.token(function (err, token) {
                     if (!err) {
                         self.auth = { login: self.login, token: token, sha512: crypto.createHash('sha512').update(self.password + token + (!self.api_id ? '' : self.api_id)).digest("hex") };
-                        console.log(self.auth);
                     }
 
                 });
