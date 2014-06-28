@@ -36,7 +36,6 @@ var sms = new (require('smsru'))({
 sms.send({
     to: '79112223344,79115556677,79115552255',
     text: 'Hello Kitty!',
-    text: 'Текст SMS',
     from: 'Имя отправителя',
     time: 60*20*1000, //отложенная отправка, в данном случае, через 20 минут в миллисекундах 
     translit: false,
@@ -46,7 +45,7 @@ sms.send({
   function(err, id){
     if(err)
       console.log(err.message);
-    console.log('id СМС сообщения', id);//Например: 22125-2345258
+    console.log('id смс сообщения', id);//Например: 22125-2345258
 });
 ```
 Получения статуса СМС:
