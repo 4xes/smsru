@@ -33,7 +33,6 @@ var merge = function () {
 
 SmsRu.prototype.curl = function (method, params, callback) {
     var url = 'http://sms.ru' + method + '?' + formatParams(merge(this.auth, params));
-    console.log('URL : ' + method + '?' + formatParams(params));
     http.get(url, function(res){
         res.setEncoding('utf8');
         var body = '';
@@ -46,70 +45,56 @@ SmsRu.prototype.curl = function (method, params, callback) {
         res.on('error', function (err) {
             callback(err);
         });
-    })
-}
+    });
+};
 
 
 SmsRu.prototype.cost = function (params, callback) {
 
     this.curl("/sms/cost", params, function (err, body) {
         var data = body.split('\n');
-        if (err) {
-            callback(err);
-        } else if (!("100" === data[0])) {
-            callback(new Error(data[0]));
-        } else {
-            callback(null, data[1], data[0]);
-
-        }
+        if (err)
+            return callback(err);
+        if (data[0] !=='100')
+            return callback(new Error(data[0]));
+        callback(null, parseFloat(data[1]), parseInt(data[2]));
     });
-}
+};
 
 SmsRu.prototype.balance = function (callback) {
 
     this.curl("/my/balance", {}, function (err, body) {
         var data = body.split('\n');
-        if (err) {
-            callback(err);
-        } else if (!("100" === data[0])) {
-            callback(new Error(data[0]));
-        } else {
-            callback(null, data[1], data[0]);
-
-        }
+        if (err)
+            return callback(err);
+        if (data[0] !=='100')
+            return callback(new Error(data[0]));
+        callback(null, parseFloat(data[1]));
     });
-}
+};
 
 
 SmsRu.prototype.check = function (callback) {
     this.curl("/auth/check", {}, function (err, result) {
-
-        if (err) {
-            callback(err);
-        } else if (!(result === '100')) {
-            callback(new Error(result));
-        } else {
-            callback(null, true);
-        }
+        if (err)
+            return callback(err);
+        if (result !== '100')
+            return callback(new Error(result));
+        callback(null);
     });
 };
-
-///my/limit?
 
 SmsRu.prototype.limit = function (callback) {
 
     this.curl("/my/limit", {}, function (err, body) {
         var data = body.split('\n');
-        if (err) {
-            callback(err);
-        } else if (!("100" === data[0])) {
-            callback(new Error(data[0]));
-        } else {
-            callback(null, data[0], data[1], data[2]);
-
-        }
+        if (err)
+            return callback(err);
+        if (data[0] !=='100')
+            return callback(new Error(data[0]));
+        callback(null, parseInt(data[1]), parseInt(data[2]));
     });
-}
+};
 
 SmsRu.prototype.senders = function (callback) {
 
@@ -117,14 +102,14 @@ SmsRu.prototype.senders = function (callback) {
         var data = body.split('\n');
         if (err) {
             callback(err);
-        } else if (!("100" === data[0])) {
+        }if (data[0] !=='100') {
             callback(new Error(data[0]));
         } else {
-            callback(null, data.slice(1), data[0]);
+            callback(null, data.slice(1));
 
         }
     });
-}
+};
 
 SmsRu.prototype.send = function (params, callback) {
     
@@ -132,95 +117,84 @@ SmsRu.prototype.send = function (params, callback) {
     
     this.curl("/sms/send", params, function (err, body) {
         var data = body.split('\n');
-        if (err) {
-            callback(err);
-        } else if (!("100" === data[0])) {
-            callback(new Error(data[0]));
-        } else {
-            callback(null, data[1], data[0]);
-            
-        }
+        if (err)
+            return callback(err);
+        if (data[0] !=='100')
+            return callback(new Error(data[0]));
+        callback(null, data[1]);
     });
-}
+};
 
 SmsRu.prototype.status = function (id, callback) {
     this.curl("/sms/status", {
         id: id
     }, function (err, result) {
-
-        if (err) {
-            callback(err);
-        } else if (result < '100' || result > '103') {
-            callback(new Error(result));
-        } else {
-            callback(null, result);
-        }
+        if (err)
+            return callback(err);
+        result = parseInt(result);
+        if (result < 100 || result > 103)
+            return callback(new Error(result));
+        callback(null, parseInt(result));
     });
 };
 
 
 SmsRu.prototype.stoplistAdd = function (params, callback) {
+    
+    
     this.curl("/stoplist/add", {
-        stoplist_phone: params.stoplist_phone,
-        stoplist_text: params.stoplist_text
+        stoplist_phone: params.phone,
+        stoplist_text: params.reason?params.reason:''
     }, function (err, result) {
-
-        if (err) {
-            callback(err);
-        } else if (!("100" === result)) {
-            callback(new Error(result));
-        } else {
-            callback(null, true);
-        }
+        if (err)
+            return callback(err);
+        if (result !=='100')
+            return callback(new Error(result));
+        callback(null);
     });
 };
 
 
 SmsRu.prototype.stoplistDel = function (params, callback) {
     var obj = {};
-    if (typeof params === 'object' && params.stoplist_phone) {
-        obj.stoplist_phone = params.stoplist_phone;
+    if (typeof params === 'object' && params.phone) {
+        obj.phone = params.phone;
     } else {
-        obj.stoplist_phone = params;
+        obj.phone = params;
     }
 
     this.curl("/stoplist/del", {
-        stoplist_phone: obj.stoplist_phone
+        stoplist_phone: obj.phone
     }, function (err, result) {
-
-        if (err) {
-            callback(err);
-        } else if (!("100" === result)) {
-            callback(new Error(result));
-        } else {
-            callback(null, true);
-        }
+        if (err)
+            return callback(err);
+        if (result !=='100')
+            return callback(new Error(result));
+        callback(null);
     });
 };
 
 var formatStopList = function (data, callback) {
     var obj = [];
-    data.slice(1).forEach(function (elem, index) {
+    data.slice(1).forEach(function (elem) {
         var sp = elem.split(';');
-        obj.push({ stoplist_phone: sp[0], stoplist_text: sp[1] });
+        obj.push({ phone: sp[0], reason: sp[1] });
 
-    })
+    });
     callback(null, obj, data[0]);
-}
+};
 
 SmsRu.prototype.stoplist = function (callback) {
 
     this.curl("/stoplist/get", {}, function (err, body) {
         var data = body.split('\n');
-        if (err) {
-            callback(err);
-        } else if (!("100" === data[0])) {
-            callback(new Error(data[0]));
-        } else {
-            formatStopList(data, callback);
-        }
+        if (err)
+            return callback(err);
+        if (data[0] !=='100')
+            return callback(new Error(data[0]));
+        formatStopList(data, callback);
     });
-}
+};
 
 
 function SmsRu(opt) {
@@ -230,18 +204,20 @@ function SmsRu(opt) {
     if (opt.login && opt.password) {
         this.login = opt.login;
         this.password = opt.password;
-        
-        
+
         this.token(function (err, token) {
             if (!err) {
                 self.auth = { login: self.login, token: token, sha512: crypto.createHash('sha512').update(self.password + token + (!self.api_id ? '' : self.api_id)).digest("hex") };
-                console.log(self.auth);
             }            
         });
+        
+        
         //we need to get token every 10 minutes
-        if (opt.autoToken && opt.autoToken === true) {
+        if (opt.autoToken === undefined || opt.autoToken === true) {
             setInterval(function () {
+           
                 self.token(function (err, token) {
+                
                     if (!err) {
                         self.auth = { login: self.login, token: token, sha512: crypto.createHash('sha512').update(self.password + token + (!self.api_id ? '' : self.api_id)).digest("hex") };
                     }
@@ -255,14 +231,13 @@ function SmsRu(opt) {
     }    
 }
 
+
 SmsRu.prototype.token = function(callback){
-    this.curl('/auth/get_token', {}
-    , function(err, token){
-        if(err){
-            callback(err);
-        } else {
-            callback(null, token);
-        }
+    this.curl('/auth/get_token', {}, 
+    function(err, token){
+        if(err)
+            return callback(err);
+        callback(null, token);
     });
 };
 

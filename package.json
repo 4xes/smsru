@@ -1,0 +1,23 @@
+{
+    "name"       : "smsru",
+    "version"    : "0.0.3",
+    "description": "Client for SMS.ru API",
+    "keywords"   : ["sms", "sms.ru"],
+    "homepage"   : "https://github.com/4xes/smsru",
+    "licenses"   : [
+        {
+            "type": "MIT",
+            "url" : "https://raw.githubusercontent.com/4xes/smsru/master/LICENSE"
+        }
+    ],
+    "author"     : {
+        "name" : "Alexey Petrushin",
+        "email": "a.petrushin@live.com",
+        "url"  : "https://github.com/4xes/"
+    },
+    "main"       : "./index",
+    "repository" : {
+        "type": "git",
+        "url" : "https://github.com/4xes/smsru.git"
+    }
+}
