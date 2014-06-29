@@ -24,7 +24,7 @@ var sms = new (require('smsru'))({
 (не рекомендуется)Усиленная авторизация (с помощью api_id, логина и пароля):
 ```js
 var sms = new (require('smsru'))({
-    api_id   : '{api_id}'
+    api_id  : '{api_id}'
     login   : '{login}',
     password: '{password}'
     // модуль автоматически обновляет авторизацию каждые 10 минут
@@ -60,8 +60,19 @@ sms.status(id, function(err, result){
   console.log('Статус',result);
 });
 ```
+Получить стоимость отправки СМС:
+```js
+sms.cost({
+    to:   '+79252846225',
+    text: 'Hello Kitty!'
+},
+  function(err, price, length){
+    if(err)
+      return console.log(err.message);
+    console.log(price, length);
+});
+```
 Баланс:
-
 ```js
 sms.balance(function(err, balance){
   if(err)
