@@ -23,7 +23,7 @@ describe('init', function(){
 describe('sms.send', function(){
     it('id should be format a ###.####', function(done){
         sms.send({
-            to: '+79854488600',
+            to: '+79264488600',
             text: 'Hello Kitty!',
             test: true
         },
