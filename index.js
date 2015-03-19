@@ -2,19 +2,8 @@
 
 
 var http = require('http');
+var qs = require('querystring');
 var crypto = require('crypto');
-
-
-function formatParams(params) {
-    var result = [];
-
-
-    Object.keys(params).forEach(function (key) {
-        result.push(key + '=' + params[key]);
-    });
-
-    return result.join('&');
-}
 
 var merge = function () {
     var obj = {},
@@ -32,7 +21,7 @@ var merge = function () {
 };
 
 SmsRu.prototype.curl = function (method, params, callback) {
-    var url = 'http://sms.ru' + method + '?' + formatParams(merge(this.auth, params));
+    var url = 'http://sms.ru' + method + '?' + qs.stringify(merge(this.auth, params));
     http.get(url, function(res){
         res.setEncoding('utf8');
         var body = '';
