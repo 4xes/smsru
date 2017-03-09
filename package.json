@@ -1,6 +1,6 @@
 {
     "name"       : "smsru",
-    "version"    : "0.0.1",
+    "version"    : "0.0.2",
     "description": "Client for SMS.ru API",
     "keywords"   : ["sms", "sms.ru","smsru"],
     "homepage"   : "https://github.com/4xes/smsru",

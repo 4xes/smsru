@@ -1,7 +1,7 @@
 ﻿'use strict';
 
 
-var http = require('http');
+var http = require('https');
 var qs = require('querystring');
 var crypto = require('crypto');
 
@@ -21,7 +21,7 @@ var merge = function () {
 };
 
 SmsRu.prototype.curl = function (method, params, callback) {
-    var url = 'http://sms.ru' + method + '?' + qs.stringify(merge(this.auth, params));
+    var url = 'https://sms.ru' + method + '?' + qs.stringify(merge(this.auth, params));
     http.get(url, function(res){
         res.setEncoding('utf8');
         var body = '';
